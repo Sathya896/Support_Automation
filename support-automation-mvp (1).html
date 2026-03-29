@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuralDesk — AI Support Automation</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f3f0;
+    --surface: #ffffff;
+    --surface2: #f9f8f6;
+    --border: #e2dfd9;
+    --border2: #ccc9c2;
+    --text: #1a1916;
+    --text2: #6b6860;
+    --text3: #a8a59f;
+    --accent: #4f46e5;
+    --accent-light: #eef2ff;
+    --accent-glow: rgba(79,70,229,0.12);
+    --warn: #d97706;
+    --warn-light: #fffbeb;
+    --warn-glow: rgba(217,119,6,0.12);
+    --danger: #dc2626;
+    --danger-light: #fef2f2;
+    --danger-glow: rgba(220,38,38,0.1);
+    --info: #0369a1;
+    --info-light: #f0f9ff;
+    --auto: #059669;
+    --auto-light: #f0fdf4;
+    --hitl: #d97706;
+    --esc: #dc2626;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .app { display: flex; flex-direction: column; min-height: 100vh; }
+
+  /* Header */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px;
+    height: 56px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+  }
+  .logo-name { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: -0.3px; color: var(--text); }
+  .logo-tag { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--accent); background: var(--accent-light); padding: 2px 7px; border-radius: 3px; letter-spacing: 0.05em; }
+  .nav { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .nav-btn {
+    padding: 6px 16px; border: none; border-right: 1px solid var(--border);
+    background: var(--surface); color: var(--text2); cursor: pointer;
+    font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 500;
+    transition: all 0.15s;
+  }
+  .nav-btn:last-child { border-right: none; }
+  .nav-btn:hover { background: var(--surface2); color: var(--text); }
+  .nav-btn.active { background: var(--accent); color: #fff; font-weight: 600; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .status-pill {
+    display: flex; align-items: center; gap: 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--auto);
+    background: var(--auto-light); border: 1px solid rgba(5,150,105,0.2);
+    padding: 4px 10px; border-radius: 4px;
+  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--auto); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* === SUBMIT TICKET === */
+  .submit-wrap { max-width: 740px; margin: 0 auto; padding: 44px 32px; }
+  .view-title { font-family: 'Outfit', sans-serif; font-size: 26px; font-weight: 700; margin-bottom: 4px; letter-spacing: -0.5px; }
+  .view-sub { color: var(--text2); font-size: 14px; margin-bottom: 32px; font-weight: 400; }
+
+  .ticket-form {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 28px; display: flex; flex-direction: column; gap: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.08em; font-family: 'Outfit', sans-serif; }
+  .form-input, .form-select, .form-textarea {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 7px; padding: 10px 13px;
+    color: var(--text); font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 400;
+    outline: none; transition: all 0.15s;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--accent); background: var(--surface);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .form-select option { background: var(--surface); }
+  .form-textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+  .submit-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 24px; border-radius: 8px; border: none;
+    background: var(--accent); color: #fff;
+    font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; width: 100%; letter-spacing: 0.01em;
+  }
+  .submit-btn:hover { background: #4338ca; box-shadow: 0 4px 16px rgba(79,70,229,0.3); transform: translateY(-1px); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* Result card */
+  .result-card {
+    margin-top: 24px; border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--border); animation: slideUp 0.35s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  @keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  .result-header { padding: 18px 22px; display: flex; align-items: center; gap: 14px; }
+  .result-header.auto { background: var(--auto-light); border-bottom: 1px solid rgba(5,150,105,0.15); }
+  .result-header.hitl { background: var(--warn-light); border-bottom: 1px solid rgba(217,119,6,0.15); }
+  .result-header.escalate { background: var(--danger-light); border-bottom: 1px solid rgba(220,38,38,0.15); }
+  .result-icon { font-size: 26px; }
+  .result-title { font-family: 'Outfit', sans-serif; font-size: 17px; font-weight: 700; letter-spacing: -0.2px; }
+  .result-subtitle { font-size: 13px; color: var(--text2); margin-top: 1px; }
+  .result-body { padding: 22px; background: var(--surface); }
+  .result-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+  .result-stat { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+  .result-stat-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+  .result-stat-value { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: var(--text); }
+  .confidence-bar-wrap { margin-bottom: 20px; }
+  .confidence-bar-label { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); margin-bottom: 7px; font-weight: 500; }
+  .confidence-bar { height: 5px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .confidence-fill { height: 100%; border-radius: 99px; transition: width 1.2s cubic-bezier(0.16,1,0.3,1); }
+  .resolution-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .resolution-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; font-weight: 500; }
+  .resolution-text { font-size: 13.5px; line-height: 1.7; color: var(--text2); }
+  .tags-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
+  .tag { font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 3px 9px; border-radius: 3px; border: 1px solid var(--border2); color: var(--text2); background: var(--surface); }
+
+  /* === HITL DASHBOARD === */
+  .hitl-wrap { padding: 32px; max-width: 1200px; margin: 0 auto; }
+  .hitl-filters { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 5px 14px; border-radius: 5px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text2); font-size: 13px; cursor: pointer;
+    font-family: 'Outfit', sans-serif; font-weight: 500; transition: all 0.12s;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .filter-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .tickets-list { display: flex; flex-direction: column; gap: 8px; }
+  .ticket-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 18px;
+    display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: start;
+    transition: all 0.15s; cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  }
+  .ticket-card:hover { border-color: var(--border2); box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+  .ticket-card.selected { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .ticket-priority { width: 3px; border-radius: 99px; align-self: stretch; }
+  .priority-critical { background: var(--danger); }
+  .priority-high { background: var(--warn); }
+  .priority-medium { background: var(--accent); }
+  .priority-low { background: var(--text3); }
+  .ticket-top { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .ticket-id { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); }
+  .ticket-category {
+    font-family: 'Outfit', sans-serif; font-size: 10px; font-weight: 600; padding: 2px 7px;
+    border-radius: 3px; background: var(--accent-light); color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .ticket-subject { font-size: 14px; font-weight: 600; margin-bottom: 3px; color: var(--text); }
+  .ticket-preview { font-size: 13px; color: var(--text2); line-height: 1.5; }
+  .ticket-meta { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+  .ticket-time { font-size: 11px; color: var(--text3); font-family: 'JetBrains Mono', monospace; }
+  .ticket-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+  .conf-badge { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 500; padding: 3px 9px; border-radius: 4px; }
+  .conf-low { background: var(--danger-light); color: var(--danger); border: 1px solid rgba(220,38,38,0.2); }
+  .conf-mid { background: var(--warn-light); color: var(--warn); border: 1px solid rgba(217,119,6,0.2); }
+  .conf-high { background: var(--auto-light); color: var(--auto); border: 1px solid rgba(5,150,105,0.2); }
+  .action-btns { display: flex; gap: 6px; }
+  .btn-approve {
+    padding: 4px 11px; border-radius: 5px; border: 1px solid rgba(5,150,105,0.3);
+    background: var(--auto-light); color: var(--auto);
+    font-size: 11px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: all 0.12s;
+  }
+  .btn-approve:hover { background: #dcfce7; }
+  .btn-reject {
+    padding: 4px 11px; border-radius: 5px; border: 1px solid rgba(220,38,38,0.3);
+    background: var(--danger-light); color: var(--danger);
+    font-size: 11px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: all 0.12s;
+  }
+  .btn-reject:hover { background: #fee2e2; }
+
+  /* Detail panel */
+  .detail-panel {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 24px; margin-top: 12px; animation: slideUp 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+  .detail-title { font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .detail-field-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 3px; }
+  .detail-field-value { font-size: 13px; color: var(--text); font-weight: 500; }
+  .ai-suggestion { background: var(--accent-light); border: 1px solid rgba(79,70,229,0.15); border-radius: 8px; padding: 15px; margin-bottom: 14px; }
+  .ai-suggestion-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; font-weight: 500; }
+  .ai-suggestion-text { font-size: 13px; line-height: 1.7; color: #3730a3; }
+  .hitl-action-row { display: flex; gap: 8px; }
+  .btn-full-approve {
+    flex: 1; padding: 10px; border-radius: 7px; border: 1px solid rgba(5,150,105,0.3);
+    background: var(--auto-light); color: var(--auto);
+    font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: all 0.15s;
+  }
+  .btn-full-approve:hover { background: #dcfce7; transform: translateY(-1px); }
+  .btn-full-reject {
+    flex: 1; padding: 10px; border-radius: 7px; border: 1px solid rgba(220,38,38,0.3);
+    background: var(--danger-light); color: var(--danger);
+    font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: all 0.15s;
+  }
+  .btn-full-reject:hover { background: #fee2e2; transform: translateY(-1px); }
+  .btn-escalate-full {
+    flex: 1; padding: 10px; border-radius: 7px; border: 1px solid rgba(217,119,6,0.3);
+    background: var(--warn-light); color: var(--warn);
+    font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Outfit', sans-serif; transition: all 0.15s;
+  }
+  .btn-escalate-full:hover { background: #fef3c7; }
+
+  /* === ANALYTICS === */
+  .analytics-wrap { padding: 32px; max-width: 1100px; margin: 0 auto; }
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .kpi-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  }
+  .kpi-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+  .kpi-value { font-family: 'Outfit', sans-serif; font-size: 36px; font-weight: 800; line-height: 1; margin-bottom: 5px; letter-spacing: -1px; }
+  .kpi-delta { font-size: 12px; color: var(--text2); font-weight: 400; }
+  .kpi-delta.up { color: var(--auto); }
+  .kpi-delta.down { color: var(--danger); }
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .chart-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  }
+  .chart-title { font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 600; margin-bottom: 16px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; }
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; }
+  .bar-label { font-family: 'Outfit', sans-serif; font-size: 12px; color: var(--text2); width: 120px; flex-shrink: 0; font-weight: 500; }
+  .bar-track { flex: 1; height: 7px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 99px; transition: width 1s ease; }
+  .bar-value { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text2); width: 32px; text-align: right; }
+  .donut-wrap { display: flex; align-items: center; gap: 24px; }
+  .donut-svg { flex-shrink: 0; }
+  .donut-legend { display: flex; flex-direction: column; gap: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text2); font-weight: 500; }
+  .legend-dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+  .activity-feed { display: flex; flex-direction: column; }
+  .activity-item { display: flex; align-items: flex-start; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-dot { width: 7px; height: 7px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .activity-text { font-size: 13px; color: var(--text2); line-height: 1.5; }
+  .activity-time { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text3); margin-top: 2px; }
+  .full-chart { grid-column: span 2; }
+
+  /* Misc */
+  .loading-wrap { display: flex; align-items: center; gap: 10px; padding: 16px 0; color: var(--text2); font-size: 13px; }
+  .spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .toast {
+    position: fixed; bottom: 20px; right: 20px;
+    background: var(--text); color: #fff;
+    border-radius: 8px; padding: 11px 16px;
+    font-size: 13px; font-weight: 500; display: flex; align-items: center; gap: 8px;
+    animation: slideUp 0.3s ease; z-index: 999;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+  }
+  .toast.hidden { display: none; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
+  .empty-state-icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-state-text { font-size: 14px; }
+  @media (max-width: 700px) {
+    .form-row { grid-template-columns: 1fr; }
+    .result-grid { grid-template-columns: 1fr 1fr; }
+    .kpi-row { grid-template-columns: 1fr 1fr; }
+    .charts-row { grid-template-columns: 1fr; }
+    .full-chart { grid-column: span 1; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <span class="logo-name">NeuralDesk</span>
+      <span class="logo-tag">MVP</span>
+    </div>
+    <nav class="nav">
+      <button class="nav-btn active" onclick="switchView('submit', this)">Submit Ticket</button>
+      <button class="nav-btn" onclick="switchView('hitl', this)">HITL Review</button>
+      <button class="nav-btn" onclick="switchView('analytics', this)">Analytics</button>
+    </nav>
+    <div class="header-right">
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        AI Engine Online
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== VIEW: SUBMIT TICKET ===== -->
+  <div class="view active" id="view-submit">
+    <div class="submit-wrap">
+      <div class="view-title">Submit Support Ticket</div>
+      <div class="view-sub">AI will instantly classify and route your ticket using confidence-based automation</div>
+
+      <div class="ticket-form">
+        <div class="form-group">
+          <label class="form-label">Customer Name</label>
+          <input class="form-input" id="cust-name" placeholder="e.g. Acme Corp" value="Acme Corp">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Product / Domain</label>
+            <select class="form-select" id="ticket-domain">
+              <option value="IT">IT Support</option>
+              <option value="HR">HR</option>
+              <option value="Finance">Finance</option>
+              <option value="Customer Service" selected>Customer Service</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Subject</label>
+            <input class="form-input" id="ticket-subject" placeholder="Brief issue title" value="Unable to reset my password">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Issue Description</label>
+          <textarea class="form-textarea" id="ticket-desc" placeholder="Describe the issue in detail...">I've been trying to reset my password for the past hour but I'm not receiving the reset email. I've checked spam and it's not there. I need access urgently as I have an important meeting in 2 hours. I've tried three times already.</textarea>
+        </div>
+        <button class="submit-btn" id="submit-btn" onclick="submitTicket()">
+          <span>⚡</span> Analyze & Route with AI
+        </button>
+      </div>
+
+      <div id="result-area"></div>
+    </div>
+  </div>
+
+  <!-- ===== VIEW: HITL DASHBOARD ===== -->
+  <div class="view" id="view-hitl">
+    <div class="hitl-wrap">
+      <div class="view-title">Human-in-the-Loop Review</div>
+      <div class="view-sub" style="margin-bottom:20px">Tickets flagged for human review — mid-confidence and escalated cases</div>
+
+      <div class="hitl-filters">
+        <button class="filter-btn active" onclick="filterTickets('all', this)">All <span id="count-all"></span></button>
+        <button class="filter-btn" onclick="filterTickets('hitl', this)">Needs Review</button>
+        <button class="filter-btn" onclick="filterTickets('escalate', this)">Escalated</button>
+        <button class="filter-btn" onclick="filterTickets('auto', this)">Auto-Resolved</button>
+      </div>
+
+      <div class="tickets-list" id="tickets-list">
+        <div class="empty-state">
+          <div class="empty-state-icon">📭</div>
+          <div class="empty-state-text">No tickets yet. Submit a ticket to see it here.</div>
+        </div>
+      </div>
+
+      <div id="detail-panel-wrap"></div>
+    </div>
+  </div>
+
+  <!-- ===== VIEW: ANALYTICS ===== -->
+  <div class="view" id="view-analytics">
+    <div class="analytics-wrap">
+      <div class="view-title">Analytics & Impact</div>
+      <div class="view-sub" style="margin-bottom:28px">Real-time metrics from your AI support automation engine</div>
+
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-label">Auto-Resolved</div>
+          <div class="kpi-value" style="color:var(--accent)" id="kpi-auto">0</div>
+          <div class="kpi-delta up" id="kpi-auto-pct">— of total</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">HITL Reviewed</div>
+          <div class="kpi-value" style="color:var(--warn)" id="kpi-hitl">0</div>
+          <div class="kpi-delta" id="kpi-hitl-pct">— of total</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Escalated</div>
+          <div class="kpi-value" style="color:var(--danger)" id="kpi-esc">0</div>
+          <div class="kpi-delta down" id="kpi-esc-pct">— of total</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Avg Confidence</div>
+          <div class="kpi-value" id="kpi-conf">—</div>
+          <div class="kpi-delta">Classification score</div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-title">Tickets by Category</div>
+          <div class="bar-chart" id="category-chart">
+            <div style="color:var(--text3);font-size:13px">Submit tickets to see breakdown</div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Routing Distribution</div>
+          <div class="donut-wrap" id="donut-wrap">
+            <svg class="donut-svg" width="110" height="110" viewBox="0 0 110 110" id="donut-svg">
+              <circle cx="55" cy="55" r="40" fill="none" stroke="var(--border2)" stroke-width="18"/>
+              <text x="55" y="60" text-anchor="middle" font-family="Outfit,sans-serif" font-size="13" font-weight="700" fill="#a8a59f">No data</text>
+            </svg>
+            <div class="donut-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:var(--accent)"></div>Auto-Resolved</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--warn)"></div>HITL Review</div>
+              <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div>Escalated</div>
+            </div>
+          </div>
+        </div>
+        <div class="chart-card full-chart">
+          <div class="chart-title">Activity Feed</div>
+          <div class="activity-feed" id="activity-feed">
+            <div style="color:var(--text3);font-size:13px;padding:12px 0">No activity yet</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Impact metrics -->
+      <div class="chart-card" style="margin-bottom:16px">
+        <div class="chart-title">Projected Impact vs Baseline</div>
+        <div class="bar-chart">
+          <div class="bar-row">
+            <div class="bar-label">Workload Reduction</div>
+            <div class="bar-track"><div class="bar-fill" style="width:52%;background:var(--accent)"></div></div>
+            <div class="bar-value">52%</div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">Cost Savings</div>
+            <div class="bar-track"><div class="bar-fill" style="width:25%;background:var(--info)"></div></div>
+            <div class="bar-value">25%</div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">SLA Compliance</div>
+            <div class="bar-track"><div class="bar-fill" style="width:35%;background:var(--warn)"></div></div>
+            <div class="bar-value">35%</div>
+          </div>
+          <div class="bar-row">
+            <div class="bar-label">CSAT Improvement</div>
+            <div class="bar-track"><div class="bar-fill" style="width:41%;background:#a78bfa)"></div></div>
+            <div class="bar-value">41%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Toast -->
+<div class="toast hidden" id="toast"></div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  tickets: [],
+  selectedTicket: null,
+  filterMode: 'all'
+};
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function switchView(view, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  btn.classList.add('active');
+  if (view === 'analytics') updateAnalytics();
+  if (view === 'hitl') renderTicketList();
+}
+
+// ============================================================
+// LOCAL NLP CLASSIFIER ENGINE
+// ============================================================
+const CATEGORIES = [
+  { name: 'Password Reset',   keywords: ['password','reset','forgot','login','signin','sign in','credentials','locked out','unlock','otp','2fa','authentication'] },
+  { name: 'Billing Issue',    keywords: ['invoice','bill','charge','payment','refund','duplicate','overcharged','subscription','receipt','pricing','cost','fee','credit'] },
+  { name: 'Technical Bug',    keywords: ['bug','error','crash','broken','not working','fails','exception','glitch','freezing','corrupt','unexpected','wrong'] },
+  { name: 'Account Access',   keywords: ['account','access','permission','role','admin','blocked','suspended','disable','enable','profile','user'] },
+  { name: 'Hardware Failure', keywords: ['hardware','device','laptop','computer','printer','monitor','keyboard','mouse','disk','drive','screen','physical'] },
+  { name: 'Software Install', keywords: ['install','setup','configure','deployment','update','upgrade','uninstall','version','patch','download'] },
+  { name: 'Network Issue',    keywords: ['network','vpn','internet','connection','wifi','bandwidth','dns','firewall','proxy','latency','timeout','ping'] },
+  { name: 'HR Request',       keywords: ['leave','holiday','payroll','salary','onboarding','offboarding','hr','policy','contract','benefits','appraisal','performance'] },
+  { name: 'General Inquiry',  keywords: ['how','what','when','where','question','information','help','guide','explain','process','procedure'] },
+];
+
+const URGENCY_HIGH  = ['urgent','asap','immediately','critical','emergency','down','outage','breach','production','cannot work','deadline','today','now','hours'];
+const URGENCY_LOW   = ['general','question','how to','curious','whenever','low priority','fyi','minor','cosmetic'];
+
+const RESOLUTIONS = {
+  'Password Reset':   'Send a password reset link via the registered email. If not received, check spam or verify the email address on file. Escalate to IT if the account is locked after multiple failed attempts.',
+  'Billing Issue':    'Review the invoice and transaction records in the billing system. If a duplicate or incorrect charge is confirmed, initiate a credit or reversal and notify the customer within 24 hours.',
+  'Technical Bug':    'Collect error logs and reproduction steps. Check the known issues tracker. If unresolved, escalate to the engineering team with full context and assign a severity label.',
+  'Account Access':   'Verify identity via secondary authentication. Check the account status in the admin panel and restore access or update permissions as appropriate.',
+  'Hardware Failure': 'Run remote diagnostics. If the hardware fault is confirmed, arrange a replacement or on-site engineer visit. Provide a temporary device if available.',
+  'Software Install': 'Share the official installation guide for the software version. Verify system compatibility and admin privileges. Remote-assist if needed.',
+  'Network Issue':    'Run connectivity diagnostics. Check VPN config, firewall rules, and ISP status. Restart network adapters. Escalate to network ops if the issue persists across multiple users.',
+  'HR Request':       'Direct the user to the HR self-service portal for routine requests. For complex cases, forward to the appropriate HR business partner.',
+  'General Inquiry':  'Provide the relevant help article or knowledge base link. If no article covers the topic, draft a response and flag for KB contribution.',
+};
+
+function classifyTicket(domain, subject, desc) {
+  const text = (subject + ' ' + desc).toLowerCase();
+  const words = text.split(/\W+/);
+
+  // Score each category
+  const scores = CATEGORIES.map(cat => {
+    const hits = cat.keywords.filter(k => text.includes(k)).length;
+    return { name: cat.name, score: hits };
+  });
+  scores.sort((a, b) => b.score - a.score);
+  const topCat = scores[0].name;
+
+  // Urgency scoring
+  const highHits = URGENCY_HIGH.filter(k => text.includes(k)).length;
+  const lowHits  = URGENCY_LOW.filter(k => text.includes(k)).length;
+  const urgencyScore = highHits - lowHits; // positive = urgent
+
+  // Priority
+  let priority = 'medium';
+  if (urgencyScore >= 3) priority = 'critical';
+  else if (urgencyScore >= 1) priority = 'high';
+  else if (urgencyScore <= -1) priority = 'low';
+
+  // Confidence: higher for common categories with clear keyword matches
+  const topScore = scores[0].score;
+  const secondScore = scores[1]?.score || 0;
+  const separation = topScore - secondScore;
+  let confidence = Math.min(95, Math.max(30,
+    40 + topScore * 12 + separation * 8 + (topScore > 0 ? 5 : 0)
+  ));
+  // Add slight randomness for realism
+  confidence = Math.round(confidence + (Math.random() * 8 - 4));
+  confidence = Math.min(97, Math.max(28, confidence));
+
+  // Routing
+  let routing, routing_reason;
+  if (priority === 'critical' || confidence < 50) {
+    routing = 'escalate';
+    routing_reason = priority === 'critical'
+      ? 'Critical priority detected — requires immediate specialist intervention.'
+      : 'Low classification confidence — ambiguous ticket requires human expert review.';
+  } else if (confidence >= 80) {
+    routing = 'auto';
+    routing_reason = 'High confidence classification with a clear resolution path — auto-resolved.';
+  } else {
+    routing = 'hitl';
+    routing_reason = 'Moderate confidence — AI suggests a resolution but human verification is recommended.';
+  }
+
+  // Severity
+  const severity = priority === 'critical' ? 'critical' : priority === 'high' ? 'high' : urgencyScore >= 0 ? 'medium' : 'low';
+
+  // Intent
+  const intentMap = {
+    'Password Reset': 'Restore account login access', 'Billing Issue': 'Resolve incorrect charge', 'Technical Bug': 'Fix reported software error',
+    'Account Access': 'Restore account permissions', 'Hardware Failure': 'Diagnose hardware fault', 'Software Install': 'Assist software setup',
+    'Network Issue': 'Restore network connectivity', 'HR Request': 'Process HR self-service request', 'General Inquiry': 'Answer customer question',
+  };
+
+  // Tags
+  const tagPool = CATEGORIES.find(c => c.name === topCat)?.keywords || [];
+  const tags = tagPool.filter(k => text.includes(k)).slice(0, 3);
+  if (domain) tags.unshift(domain.toLowerCase().replace(' ', '-'));
+
+  return {
+    category: topCat,
+    intent: intentMap[topCat] || 'Resolve support request',
+    priority,
+    confidence,
+    routing,
+    routing_reason,
+    severity,
+    suggested_resolution: RESOLUTIONS[topCat] || RESOLUTIONS['General Inquiry'],
+    estimated_resolution_time: priority === 'critical' ? '1 hour' : priority === 'high' ? '2-4 hours' : confidence > 80 ? '5-15 minutes' : '1-2 hours',
+    similar_tickets_resolved: Math.floor(50 + Math.random() * 400),
+    tags: [...new Set(tags)].slice(0, 4),
+  };
+}
+
+// ============================================================
+// SUBMIT TICKET + AI CLASSIFICATION
+// ============================================================
+async function submitTicket() {
+  const name = document.getElementById('cust-name').value.trim();
+  const domain = document.getElementById('ticket-domain').value;
+  const subject = document.getElementById('ticket-subject').value.trim();
+  const desc = document.getElementById('ticket-desc').value.trim();
+
+  if (!subject || !desc) { showToast('⚠️ Please fill in subject and description'); return; }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Classifying...';
+
+  const resultArea = document.getElementById('result-area');
+  resultArea.innerHTML = '';
+
+  try {
+    // Local NLP classifier — instant, no API needed
+    const result = classifyTicket(domain, subject, desc);
+
+    // Store ticket
+    const ticket = {
+      id: 'TKT-' + String(state.tickets.length + 1).padStart(4, '0'),
+      name, priority: result.priority || 'medium', domain, subject, desc,
+      result,
+      timestamp: new Date(),
+      status: result.routing,
+      humanAction: null
+    };
+    state.tickets.unshift(ticket);
+
+    // Render result
+    renderResult(result, ticket.id, resultArea);
+    addActivity(ticket);
+    updateAnalytics();
+
+  } catch (err) {
+    resultArea.innerHTML = `<div style="background:var(--danger-glow);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:20px;margin-top:20px;color:var(--danger)">
+      ⚠️ AI classification failed. Please ensure API key is configured. Error: ${err.message}
+    </div>`;
+  }
+
+  btn.disabled = false; btn.innerHTML = '<span>⚡</span> Analyze & Route with AI';
+}
+
+function renderResult(result, id, container) {
+  const routeMap = {
+    auto: { icon: '✅', label: 'Auto-Resolved', sub: 'High confidence — resolved automatically', cls: 'auto', color: 'var(--auto)' },
+    hitl: { icon: '👁️', label: 'Flagged for Human Review', sub: 'Medium confidence — agent review recommended', cls: 'hitl', color: 'var(--hitl)' },
+    escalate: { icon: '🚨', label: 'Escalated to Specialist', sub: 'Low confidence or critical priority — requires specialist', cls: 'escalate', color: 'var(--esc)' }
+  };
+  const r = routeMap[result.routing] || routeMap.hitl;
+  const confColor = result.confidence >= 80 ? 'var(--accent)' : result.confidence >= 50 ? 'var(--warn)' : 'var(--danger)';
+  const fillColor = result.confidence >= 80 ? 'linear-gradient(90deg,var(--accent),#0ea5e9)' : result.confidence >= 50 ? 'var(--warn)' : 'var(--danger)';
+
+  container.innerHTML = `
+  <div class="result-card">
+    <div class="result-header ${r.cls}">
+      <div class="result-icon">${r.icon}</div>
+      <div>
+        <div class="result-title">${r.label}</div>
+        <div class="result-subtitle">${r.sub} — Ticket ${id}</div>
+      </div>
+    </div>
+    <div class="result-body">
+      <div class="result-grid">
+        <div class="result-stat">
+          <div class="result-stat-label">Category</div>
+          <div class="result-stat-value" style="font-size:15px">${result.category}</div>
+        </div>
+        <div class="result-stat">
+          <div class="result-stat-label">Intent Detected</div>
+          <div class="result-stat-value" style="font-size:14px">${result.intent}</div>
+        </div>
+        <div class="result-stat">
+          <div class="result-stat-label">Est. Resolution</div>
+          <div class="result-stat-value" style="font-size:14px">${result.estimated_resolution_time}</div>
+        </div>
+      </div>
+
+      <div class="confidence-bar-wrap">
+        <div class="confidence-bar-label">
+          <span>AI Confidence Score</span>
+          <span style="color:${confColor};font-family:'DM Mono',monospace;font-weight:600">${result.confidence}%</span>
+        </div>
+        <div class="confidence-bar">
+          <div class="confidence-fill" id="conf-fill-${id}" style="width:0%;background:${fillColor}"></div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:5px;font-family:'DM Mono',monospace">${result.routing_reason}</div>
+      </div>
+
+      <div class="resolution-box">
+        <div class="resolution-label">🤖 AI Suggested Resolution</div>
+        <div class="resolution-text">${result.suggested_resolution}</div>
+        <div class="tags-row">
+          ${(result.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}
+          <span class="tag" style="color:var(--info);border-color:rgba(96,165,250,0.3)">${result.similar_tickets_resolved} similar resolved</span>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  setTimeout(() => {
+    const fill = document.getElementById('conf-fill-' + id);
+    if (fill) fill.style.width = result.confidence + '%';
+  }, 100);
+
+  showToast(`${r.icon} Ticket ${id} — ${r.label}`);
+}
+
+// ============================================================
+// HITL DASHBOARD
+// ============================================================
+function renderTicketList() {
+  const list = document.getElementById('tickets-list');
+  let filtered = state.tickets;
+  if (state.filterMode !== 'all') filtered = state.tickets.filter(t => t.status === state.filterMode);
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📭</div><div class="empty-state-text">No tickets in this category</div></div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(t => {
+    const conf = t.result.confidence;
+    const confCls = conf >= 80 ? 'conf-high' : conf >= 50 ? 'conf-mid' : 'conf-low';
+    const priCls = 'priority-' + (t.result.severity || t.priority);
+    const routeIcon = t.status === 'auto' ? '✅' : t.status === 'hitl' ? '👁️' : '🚨';
+    const elapsed = timeAgo(t.timestamp);
+    return `
+    <div class="ticket-card ${state.selectedTicket === t.id ? 'selected' : ''}" onclick="selectTicket('${t.id}')">
+      <div class="ticket-priority ${priCls}"></div>
+      <div class="ticket-main">
+        <div class="ticket-top">
+          <span class="ticket-id">${t.id}</span>
+          <span class="ticket-category">${t.result.category}</span>
+          <span class="ticket-category" style="color:var(--text2)">${t.domain}</span>
+        </div>
+        <div class="ticket-subject">${t.subject}</div>
+        <div class="ticket-preview">${t.desc.substring(0, 90)}...</div>
+        <div class="ticket-meta">
+          <span class="ticket-time">⏱ ${elapsed}</span>
+          <span class="ticket-time">👤 ${t.name}</span>
+          ${t.humanAction ? `<span style="font-size:11px;color:var(--accent);font-family:'DM Mono',monospace">✓ ${t.humanAction}</span>` : ''}
+        </div>
+      </div>
+      <div class="ticket-actions">
+        <div class="conf-badge ${confCls}">${conf}%</div>
+        <div style="font-size:11px;color:var(--text2);text-align:right">${routeIcon} ${t.status === 'auto' ? 'Auto' : t.status === 'hitl' ? 'Review' : 'Escalated'}</div>
+        ${t.status === 'hitl' && !t.humanAction ? `
+        <div class="action-btns">
+          <button class="btn-approve" onclick="event.stopPropagation();humanAction('${t.id}','approved')">✓ Approve</button>
+          <button class="btn-reject" onclick="event.stopPropagation();humanAction('${t.id}','rejected')">✗ Reject</button>
+        </div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function selectTicket(id) {
+  state.selectedTicket = state.selectedTicket === id ? null : id;
+  renderTicketList();
+  const wrap = document.getElementById('detail-panel-wrap');
+  if (!state.selectedTicket) { wrap.innerHTML = ''; return; }
+  const t = state.tickets.find(x => x.id === id);
+  if (!t) return;
+  const conf = t.result.confidence;
+  const confColor = conf >= 80 ? 'var(--accent)' : conf >= 50 ? 'var(--warn)' : 'var(--danger)';
+  wrap.innerHTML = `
+  <div class="detail-panel">
+    <div class="detail-title">
+      <span>📋</span> ${t.id} — Ticket Detail
+      ${t.humanAction ? `<span style="font-size:13px;color:var(--accent);font-weight:400">✓ ${t.humanAction.toUpperCase()}</span>` : ''}
+    </div>
+    <div class="detail-grid">
+      <div class="detail-field"><div class="detail-field-label">Customer</div><div class="detail-field-value">${t.name}</div></div>
+      <div class="detail-field"><div class="detail-field-label">Domain</div><div class="detail-field-value">${t.domain}</div></div>
+      <div class="detail-field"><div class="detail-field-label">Priority</div><div class="detail-field-value">${t.priority}</div></div>
+      <div class="detail-field"><div class="detail-field-label">Severity (AI)</div><div class="detail-field-value">${t.result.severity}</div></div>
+      <div class="detail-field"><div class="detail-field-label">Category</div><div class="detail-field-value">${t.result.category}</div></div>
+      <div class="detail-field"><div class="detail-field-label">Confidence</div><div class="detail-field-value" style="color:${confColor};font-family:'DM Mono',monospace;font-weight:600">${conf}%</div></div>
+    </div>
+    <div class="ai-suggestion">
+      <div class="ai-suggestion-label"><span>⚡</span> AI SUGGESTED RESOLUTION</div>
+      <div class="ai-suggestion-text">${t.result.suggested_resolution}</div>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:14px;font-family:'DM Mono',monospace">${t.result.routing_reason}</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:14px;font-weight:500">Full Description</div>
+    <div style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:14px;font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:16px">${t.desc}</div>
+    ${!t.humanAction ? `
+    <div class="hitl-action-row">
+      <button class="btn-full-approve" onclick="humanAction('${t.id}','approved')">✓ Approve & Resolve</button>
+      <button class="btn-escalate-full" onclick="humanAction('${t.id}','escalated')">↑ Escalate to Specialist</button>
+      <button class="btn-full-reject" onclick="humanAction('${t.id}','rejected')">✗ Reject & Reassign</button>
+    </div>` : `<div style="text-align:center;color:var(--accent);font-size:13px;padding:12px;background:var(--accent-glow);border-radius:8px;border:1px solid rgba(0,212,170,0.2)">✓ Action recorded: ${t.humanAction.toUpperCase()}</div>`}
+  </div>`;
+}
+
+function filterTickets(mode, btn) {
+  state.filterMode = mode;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  state.selectedTicket = null;
+  document.getElementById('detail-panel-wrap').innerHTML = '';
+  renderTicketList();
+}
+
+function humanAction(id, action) {
+  const t = state.tickets.find(x => x.id === id);
+  if (!t) return;
+  t.humanAction = action;
+  t.status = action === 'approved' ? 'auto' : action === 'escalated' ? 'escalate' : 'hitl';
+  renderTicketList();
+  selectTicket(id);
+  updateAnalytics();
+  showToast(`✓ ${id} marked as ${action}`);
+}
+
+// ============================================================
+// ANALYTICS
+// ============================================================
+function updateAnalytics() {
+  const tickets = state.tickets;
+  const total = tickets.length;
+  const autoCount = tickets.filter(t => t.status === 'auto').length;
+  const hitlCount = tickets.filter(t => t.status === 'hitl').length;
+  const escCount = tickets.filter(t => t.status === 'escalate').length;
+  const avgConf = total > 0 ? Math.round(tickets.reduce((a, t) => a + t.result.confidence, 0) / total) : 0;
+
+  document.getElementById('kpi-auto').textContent = autoCount;
+  document.getElementById('kpi-hitl').textContent = hitlCount;
+  document.getElementById('kpi-esc').textContent = escCount;
+  document.getElementById('kpi-conf').textContent = total > 0 ? avgConf + '%' : '—';
+  document.getElementById('kpi-auto-pct').textContent = total > 0 ? Math.round(autoCount/total*100) + '% of total' : '— of total';
+  document.getElementById('kpi-hitl-pct').textContent = total > 0 ? Math.round(hitlCount/total*100) + '% of total' : '— of total';
+  document.getElementById('kpi-esc-pct').textContent = total > 0 ? Math.round(escCount/total*100) + '% of total' : '— of total';
+
+  // Category chart
+  const cats = {};
+  tickets.forEach(t => { cats[t.result.category] = (cats[t.result.category] || 0) + 1; });
+  const catChart = document.getElementById('category-chart');
+  if (Object.keys(cats).length === 0) {
+    catChart.innerHTML = '<div style="color:var(--text3);font-size:13px">Submit tickets to see breakdown</div>';
+  } else {
+    const max = Math.max(...Object.values(cats));
+    const colors = ['#4f46e5', '#0369a1', '#d97706', '#dc2626', '#059669', '#7c3aed'];
+    catChart.innerHTML = Object.entries(cats).map(([cat, count], i) => `
+      <div class="bar-row">
+        <div class="bar-label">${cat}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${Math.round(count/max*100)}%;background:${colors[i%colors.length]}"></div></div>
+        <div class="bar-value">${count}</div>
+      </div>`).join('');
+  }
+
+  // Donut
+  if (total > 0) {
+    const r = 40, cx = 55, cy = 55;
+    const circ = 2 * Math.PI * r;
+    const slices = [
+      { val: autoCount, color: '#059669' },
+      { val: hitlCount, color: '#d97706' },
+      { val: escCount, color: '#dc2626' }
+    ];
+    let offset = 0;
+    const paths = slices.map(s => {
+      const frac = s.val / total;
+      const dash = frac * circ;
+      const gap = circ - dash;
+      const el = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="18" stroke-dasharray="${dash} ${gap}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${cx} ${cy})" opacity="${s.val>0?1:0}"/>`;
+      offset += dash;
+      return el;
+    }).join('');
+    document.getElementById('donut-svg').innerHTML = paths + `<text x="${cx}" y="${cy+5}" text-anchor="middle" font-family="Outfit,sans-serif" font-size="14" font-weight="800" fill="#1a1916">${total}</text><text x="${cx}" y="${cy+18}" text-anchor="middle" font-family="Outfit,sans-serif" font-size="9" fill="#a8a59f">tickets</text>`;
+  }
+}
+
+// ============================================================
+// ACTIVITY FEED
+// ============================================================
+function addActivity(ticket) {
+  const feed = document.getElementById('activity-feed');
+  const r = ticket.result;
+  const icons = { auto: '✅', hitl: '👁️', escalate: '🚨' };
+  const colors = { auto: 'var(--accent)', hitl: 'var(--warn)', escalate: 'var(--danger)' };
+  const labels = { auto: 'Auto-resolved', hitl: 'Flagged for review', escalate: 'Escalated' };
+  
+  const existing = feed.querySelector('[style*="No activity"]');
+  if (existing) existing.remove();
+
+  const item = document.createElement('div');
+  item.className = 'activity-item';
+  item.innerHTML = `
+    <div class="activity-dot" style="background:${colors[r.routing]}"></div>
+    <div>
+      <div class="activity-text">${icons[r.routing]} <strong>${ticket.id}</strong> — ${r.category} — ${labels[r.routing]} (${r.confidence}% confidence)</div>
+      <div class="activity-time">just now · ${ticket.name}</div>
+    </div>`;
+  feed.insertBefore(item, feed.firstChild);
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function timeAgo(date) {
+  const s = Math.floor((new Date() - date) / 1000);
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  return Math.floor(s/3600) + 'h ago';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.remove('hidden');
+  clearTimeout(t._timeout);
+  t._timeout = setTimeout(() => t.classList.add('hidden'), 3500);
+}
+
+// Pre-load static demo tickets (no API calls)
+function loadDemoTickets() {
+  const demos = [
+    { name: 'TechCorp Ltd', domain: 'IT', subject: 'VPN not connecting after Windows update', desc: 'After the latest Windows update, our VPN client stopped working for 15 users. Error code 809. Staff cannot work from home.', result: { category: 'Network Issue', intent: 'Fix VPN connectivity failure', priority: 'high', confidence: 62, routing: 'hitl', routing_reason: 'Mid-confidence network issue affecting multiple users — agent verification recommended.', severity: 'high', suggested_resolution: 'Check VPN client version compatibility with the latest Windows update. Roll back the update on affected machines or push a VPN client patch. Reference KB-4521 for error 809 resolution steps.', estimated_resolution_time: '2 hours', similar_tickets_resolved: 184, tags: ['vpn', 'windows-update', 'network', 'multi-user'] } },
+    { name: 'GlobalBank', domain: 'Finance', subject: 'Duplicate charges on invoice #INV-2024-789', desc: 'We have been billed twice for our enterprise license this month. The duplicate charge is $4,500 and needs immediate reversal before end of quarter.', result: { category: 'Billing Issue', intent: 'Reverse duplicate invoice charge', priority: 'critical', confidence: 38, routing: 'escalate', routing_reason: 'Critical financial dispute with high monetary value — requires specialist escalation.', severity: 'critical', suggested_resolution: 'Escalate to billing specialist immediately. Verify invoice #INV-2024-789 in the billing system and initiate a $4,500 credit reversal. Confirm resolution with the client before end of quarter.', estimated_resolution_time: '4 hours', similar_tickets_resolved: 97, tags: ['billing', 'duplicate', 'invoice', 'critical'] } },
+    { name: 'HR Dept', domain: 'HR', subject: 'How do I update my leave balance?', desc: 'I need to know the process for updating annual leave carry-over balances in the HR portal. General question about the system.', result: { category: 'HR Request', intent: 'Update leave balance portal', priority: 'low', confidence: 91, routing: 'auto', routing_reason: 'High-confidence routine HR inquiry with clear self-service resolution path.', severity: 'low', suggested_resolution: 'Navigate to HR Portal → My Leave → Carry-Over Settings. Enter the balance and save. Changes reflect within 24 hours. See help article HRA-112 for a step-by-step guide.', estimated_resolution_time: '5 minutes', similar_tickets_resolved: 412, tags: ['hr', 'leave', 'self-service', 'portal'] } }
+  ];
+  demos.forEach((d, i) => {
+    const ticket = { id: 'TKT-' + String(i + 1).padStart(4, '0'), ...d, timestamp: new Date(Date.now() - (i + 1) * 1800000), status: d.result.routing, humanAction: null };
+    state.tickets.push(ticket);
+    addActivity(ticket);
+  });
+  updateAnalytics();
+  renderTicketList();
+}
+
+loadDemoTickets();
+</script>
+</body>
+</html>
